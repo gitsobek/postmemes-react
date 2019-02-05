@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { map } from 'lodash/map';
+import map from 'lodash/map';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { fetchPosts } from '../../actions';
@@ -12,7 +12,7 @@ class PostList extends Component {
     renderPosts() {
         return map(this.props.posts, post => {
             return (
-                <div className="card darken-1 horizontal" key={post.id}>
+                <div className="card darken-1 horizontal" key={post._id}>
                     <div className="card-stacked">
                         <div className="card-content">
                             <span className="card-title">{post.title}</span>

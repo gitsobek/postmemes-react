@@ -8,9 +8,9 @@ class Header extends Component {
             case null:
                 return;
             case false:
-                return(
+                return (
                     <li>
-                        <a href={'/auth/google'}>Login with Google</a>
+                        <a href={'/auth/google/start'}>Login with Google</a>
                     </li>
                 );
             default:
@@ -32,7 +32,8 @@ class Header extends Component {
                     <Link
                         to={this.props.auth ? '/posts' : '/'}
                         className="left brand-logo"
-                        style={{ marginLeft: "10px" }}>
+                        style={{ marginLeft: "10px" }}
+                    >
                     Ya a memer.
                     </Link>
                     <ul className="right">{this.renderNavbarContent()}</ul>

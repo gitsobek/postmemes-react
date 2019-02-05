@@ -15,7 +15,7 @@ class App extends Component {
   }
   render() {
     return (
-      <div className="mainpage">
+      <div className="container">
         <BrowserRouter>
           <div>
             <Header />
@@ -23,7 +23,7 @@ class App extends Component {
               <Route path="/posts/new" component={PostNew} />
               <Route exact path="/posts/:_id" component={PostShow} />
               <Route path="/posts" component={Dashboard} />
-              <Route path="/" component={Landing} />
+              <Route exact path="/" component={Landing} />
             </Switch>
           </div>
         </BrowserRouter>
