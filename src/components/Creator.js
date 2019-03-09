@@ -1,6 +1,9 @@
 import React, { Component } from "react";
 import { NavbarBrand } from "reactstrap";
 import "./Creator.css";
+import Modal from "react-modal";
+
+Modal.setAppElement("#root");
 
 const photos = [
   { src: "/images/vict-baby.png" },
@@ -43,62 +46,29 @@ class Creator extends Component {
     this.state = {
       currentImage: 0,
       modalIsOpen: false,
-      currentImageBase64: null,
+      currentImagebase64: null,
       ...initialState
     };
   }
 
-  /* Convert image to data URI */
-  getBase64Image(img) {
-    var canvas = document.createElement("canvas");
-    var ctx = canvas.getContext("2d");
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    ctx.drawImage(img, 0, 0);
-    var dataURL = canvas.toDataURL("image/png");
-
-    return dataURL;
-  }
-
-  openImage = index => {
+  openImage = async index => {
     const image = photos[index];
     const baseImage = new Image();
-
     baseImage.src = image.src;
-    const base64 = this.getBase64Image(baseImage);
+    const base64 = await this.getBase64Image(baseImage);
+
     this.setState(prevState => ({
       currentImage: index,
       modalIsOpen: !prevState.modalIsOpen,
-      currentImageBase64: base64,
+      currentImagebase64: base64,
       ...initialState
     }));
   };
 
-  convertSvgToImage = () => {
-    const svg = this.svgRef;
-    let svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const svgSize = svg.getBoundingClientRect();
-    const img = document.createElement("img");
-
-    canvas.setAttribute("id", "canvas");
-    canvas.width = svgSize.width;
-    canvas.height = svgSize.height;
-    img.setAttribute(
-      "src",
-      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)))
-    );
-    img.onload = function() {
-      canvas.getContext("2d").drawImage(img, 0, 0);
-      const canvasData = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.download = "meme.png";
-      a.href = canvasData;
-      document.body.appendChild(a);
-      a.click();
-    };
+  toggle = () => {
+    this.setState(prevState => ({
+      modalIsOpen: !prevState.modalIsOpen
+    }));
   };
 
   changeText = event => {
@@ -148,6 +118,9 @@ class Creator extends Component {
       } else if (type === "top" && this.state.isTopDragging) {
         stateObj = this.getStateObj(e, type);
       }
+      this.setState({
+        ...stateObj
+      });
     }
   };
 
@@ -159,14 +132,47 @@ class Creator extends Component {
     });
   };
 
+  convertSvgToImage = () => {
+    const svg = this.svgRef;
+    let svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("id", "canvas");
+    const svgSize = svg.getBoundingClientRect();
+    canvas.width = svgSize.width;
+    canvas.height = svgSize.height;
+    const img = document.createElement("img");
+    img.setAttribute(
+      "src",
+      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)))
+    );
+    img.onload = function() {
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      const canvasdata = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.download = "meme.png";
+      a.href = canvasdata;
+      document.body.appendChild(a);
+      a.click();
+    };
+  };
+
+  getBase64Image(img) {
+    var canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    var dataURL = canvas.toDataURL("image/png");
+    return dataURL;
+  }
+
   render() {
     const image = photos[this.state.currentImage];
-    const baseImage = new Image();
-
-    baseImage.src = image.src;
-    var ratio = baseImage.width / baseImage.height;
+    const base_image = new Image();
+    base_image.src = image.src;
+    var wrh = base_image.width / base_image.height;
     var newWidth = 600;
-    var newHeight = newWidth / ratio;
+    var newHeight = newWidth / wrh;
     const textStyle = {
       fontFamily: "Arial",
       fontSize: "50px",
@@ -177,29 +183,113 @@ class Creator extends Component {
     };
 
     return (
-      <div className="main-content">
-        <div className="sidebar">
-          <NavbarBrand href="/">Make-a-Meme</NavbarBrand>
-          <p>
-            You can add top and bottom text to a meme-template, move the text
-            around and you can save the image by downloading it.
-          </p>
+      <div>
+        <div className="main-content">
+          <div className="sidebar">
+            <NavbarBrand href="/">Make-a-Meme</NavbarBrand>
+            <p>
+              You can add top and bottom text to a meme-template, move the text
+              around and you can save the image by downloading it.
+            </p>
+          </div>
+          <div className="content">
+            {photos.map((image, index) => (
+              <div className="image-holder" key={image.src}>
+                <span className="top-caption">Top text</span>
+                <img
+                  style={{ width: "100%", height: "100%", cursor: "pointer" }}
+                  alt={index}
+                  src={image.src}
+                  onClick={() => this.openImage(index)}
+                  role="presentation"
+                />
+                <span className="bottom-caption">Bottom text</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="content">
-          {photos.map((image, index) => (
-            <div className="image-holder" key={image.src}>
-              <span className="top-caption">Top text</span>
-              <img
-                style={{ width: "100%", height: "100%", cursor: "pointer" }}
-                alt={index}
-                src={image.src}
-                onClick={() => this.openImage(index)}
-                role="presentation"
+        <Modal
+          isOpen={this.state.modalIsOpen}
+          className="Modal"
+          onRequestClose={this.toggle}
+        >
+          <div className="modal-body">
+            <svg
+              width={newWidth}
+              id="svg_ref"
+              height={newHeight}
+              ref={el => {
+                this.svgRef = el;
+              }}
+              xmlns="http://www.w3.org/2000/svg"
+              xmlnsXlink="http://www.w3.org/1999/xlink"
+            >
+              <image
+                ref={el => {
+                  this.imageRef = el;
+                }}
+                xlinkHref={this.state.currentImagebase64}
+                height={newHeight}
+                width={newWidth}
               />
-              <span className="bottom-caption">Bottom text</span>
+              <text
+                style={{
+                  ...textStyle,
+                  zIndex: this.state.isTopDragging ? 4 : 1
+                }}
+                x={this.state.topX}
+                y={this.state.topY}
+                dominantBaseline="middle"
+                textAnchor="middle"
+                onMouseDown={event => this.handleMouseDown(event, "top")}
+                onMouseUp={event => this.handleMouseUp(event, "top")}
+              >
+                {this.state.toptext}
+              </text>
+              <text
+                style={textStyle}
+                dominantBaseline="middle"
+                textAnchor="middle"
+                x={this.state.bottomX}
+                y={this.state.bottomY}
+                onMouseDown={event => this.handleMouseDown(event, "bottom")}
+                onMouseUp={event => this.handleMouseUp(event, "bottom")}
+              >
+                {this.state.bottomtext}
+              </text>
+            </svg>
+            <div className="form-creator">
+              <form className="form-group">
+                <label htmlFor="toptext">Top Text</label>
+                <input
+                  type="text"
+                  name="toptext"
+                  id="toptext"
+                  placeholder="Add text to the top"
+                  onChange={this.changeText}
+                />
+              </form>
+              <form className="form-group">
+                <label htmlFor="bottomtext">Bottom Text</label>
+                <input
+                  type="text"
+                  name="bottomtext"
+                  id="bottomtext"
+                  placeholder="Add text to the bottom"
+                  onChange={this.changeText}
+                />
+              </form>
+              <button onClick={() => this.convertSvgToImage()} className="btn">
+                Download
+                <i className="material-icons right">send</i>
+              </button>
+              <button onClick={() => this.toggle()} className="btn red right">
+                Close
+                <i className="material-icons right">close</i>
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        </Modal>
       </div>
     );
   }
